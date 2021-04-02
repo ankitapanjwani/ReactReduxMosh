@@ -1,11 +1,17 @@
 // ------------------------   createstore from REDUX --------------------------
 
 // import { createStore } from "redux";
-import reducer from './bugs';
+// import reducer from './projects';
 // import { devToolsEnhancer } from "redux-devtools-extension";
 
 // ---------------- Inbuilt  function for creating Store-configureStore() from REDUX Toolkit which includes devtoolsenhancer purpose also----------
 import {configureStore} from "@reduxjs/toolkit";
+
+
+//---------------------------importing combineReducers--------------------------
+// import reducer from './reducer';
+import reducer from './RootEntities';
+import logger from './middleware/logger';
 
 // --------------------------- exporting Store using Createstore --------------------------------------
 
@@ -23,5 +29,10 @@ import {configureStore} from "@reduxjs/toolkit";
 
 // -------------------------- exporting Store  using Configurestore by Redux Toolkit  ----------------------
 export default function () {
-  return configureStore({reducer});
+  return configureStore(
+    {
+      reducer,
+      middleware: [logger('console')]
+    }
+    );
 }

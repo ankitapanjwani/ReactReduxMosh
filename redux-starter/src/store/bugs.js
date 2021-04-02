@@ -73,12 +73,12 @@
 // ---------------------------------Using Toolkit -----------------------------------------------
 
 import { createAction, createReducer, createSlice } from "@reduxjs/toolkit";
-
+import {createSelector} from 'reselect';
 //-------------------------- Actions with ActionCreators -----------------
-export const BugAdded = createAction("BUG_ADDED");
-// console.log(BugAdded({id: 1}));
-export const BugResolved = createAction("BUG_RESOLVED");
-export const BugRemoved = createAction("BUG_REMOVED");
+// export const BugAdded = createAction("BUG_ADDED");
+// // console.log(BugAdded({id: 1}));
+// export const BugResolved = createAction("BUG_RESOLVED");
+// export const BugRemoved = createAction("BUG_REMOVED");
 
 // --------------------- REDUCER using toolkit's  Actions & ActionCreators -------------------
 let lastId = 0;
@@ -126,13 +126,18 @@ let lastId = 0;
 // });
 
 //---------------------------------------------CreateSlice Combines - Actions /ActionCreators / Reducers ----------------------------------------
-createSlice({
+const slice = createSlice({
     name: 'bugs',
     initialState: [],
     reducers: {
 
         // actions => action handlers 
-        
+        BugAssignedToUser: (bugs, action) =>{
+            const {bugId, userId} = action.payload;
+
+            const index = bugs.findIndex(bug => bug.id === bugId);
+            bugs[index].userId = userId;
+        },
         BugAdded: (bugs,action) => {
             bugs.push({
                       id: ++lastId,
@@ -141,8 +146,29 @@ createSlice({
                     });
         },
 
-        BugResolved: (state,action) =>{
-            
+        BugResolved: (bugs,action) =>{
+            const index = bugs.findIndex(bug => bug.id === action.payload.id);
+                bugs[index].resolved = true;
         }
     }
 })
+
+// -------------------- Actions need to be imported as named export & reducer needs to be imported as default export--------------------------
+export const {BugAdded, BugResolved ,BugAssignedToUser} = slice.actions;
+export default slice.reducer;
+
+
+
+//Selector
+// export const getUnresolvedBugs =  (state) => state.RootEntities.entities.bugs.filter(bug => !bug.resolved)
+   
+export const getUnresolvedBugs =  createSelector(
+    state => state.RootEntities.entities.bugs,
+    bugs => bugs.filter(bug => !bug.resolved)
+    )
+
+
+    export const getBugsByUser =  userId => createSelector(
+        state => state.RootEntities.entities.bugs,
+        bugs => bugs.filter(bug => bug.userId === userId)
+        )
