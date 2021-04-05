@@ -73,7 +73,8 @@
 // ---------------------------------Using Toolkit -----------------------------------------------
 
 import { createAction, createReducer, createSlice } from "@reduxjs/toolkit";
-import {createSelector} from 'reselect';
+import { createSelector } from "reselect";
+import { apiCallBegan } from "./api";
 //-------------------------- Actions with ActionCreators -----------------
 // export const BugAdded = createAction("BUG_ADDED");
 // // console.log(BugAdded({id: 1}));
@@ -126,49 +127,121 @@ let lastId = 0;
 // });
 
 //---------------------------------------------CreateSlice Combines - Actions /ActionCreators / Reducers ----------------------------------------
-const slice = createSlice({
-    name: 'bugs',
-    initialState: [],
-    reducers: {
+// const slice = createSlice({
+//     name: 'bugs',
+//     initialState: [],
+//     reducers: {
 
-        // actions => action handlers 
-        BugAssignedToUser: (bugs, action) =>{
-            const {bugId, userId} = action.payload;
+//         // actions => action handlers
+//         BugAssignedToUser: (bugs, action) =>{
+//             const {bugId, userId} = action.payload;
 
-            const index = bugs.findIndex(bug => bug.id === bugId);
-            bugs[index].userId = userId;
-        },
-        BugAdded: (bugs,action) => {
-            bugs.push({
-                      id: ++lastId,
-                      description: action.payload.description,
-                      resolved: false,
-                    });
-        },
+//             const index = bugs.findIndex(bug => bug.id === bugId);
+//             bugs[index].userId = userId;
+//         },
+//         BugAdded: (bugs,action) => {
+//             bugs.push({
+//                       id: ++lastId,
+//                       description: action.payload.description,
+//                       resolved: false,
+//                     });
+//         },
 
-        BugResolved: (bugs,action) =>{
-            const index = bugs.findIndex(bug => bug.id === action.payload.id);
-                bugs[index].resolved = true;
-        }
-    }
-})
+//         BugResolved: (bugs,action) =>{
+//             const index = bugs.findIndex(bug => bug.id === action.payload.id);
+//                 bugs[index].resolved = true;
+//         },
+//         BugRecieved: (bugs,action) =>{
+//                 console.log("In BUG RECVEIVED---", action.payload)
+//                 bugs.push(...action.payload);
+//         }
+//     }
+// })
 
 // -------------------- Actions need to be imported as named export & reducer needs to be imported as default export--------------------------
-export const {BugAdded, BugResolved ,BugAssignedToUser} = slice.actions;
-export default slice.reducer;
-
-
+// export const {BugAdded, BugResolved ,BugAssignedToUser,BugRecieved} = slice.actions;
+// export default slice.reducer;
 
 //Selector
 // export const getUnresolvedBugs =  (state) => state.RootEntities.entities.bugs.filter(bug => !bug.resolved)
-   
-export const getUnresolvedBugs =  createSelector(
-    state => state.RootEntities.entities.bugs,
-    bugs => bugs.filter(bug => !bug.resolved)
-    )
+
+// export const getUnresolvedBugs = createSelector(
+//   (state) => state.RootEntities.entities.bugs,
+//   (bugs) => bugs.filter((bug) => !bug.resolved)
+// );
+
+// export const getBugsByUser = (userId) =>
+//   createSelector(
+//     (state) => state.RootEntities.entities.bugs,
+//     (bugs) => bugs.filter((bug) => bug.userId === userId)
+//   );
+
+//==================================Restructuring the store ====================
+const slice = createSlice({
+  name: "bugs",
+  initialState: {
+    list: [],
+    loading: false,
+    lastfetch: null,
+  },
+  reducers: {
+    // actions => action handlers
+    BugAssignedToUser: (bugs, action) => {
+      const { bugId, userId } = action.payload;
+
+      const index = bugs.list.findIndex((bug) => bug.id === bugId);
+      bugs.list[index].userId = userId;
+    },
+    BugAdded: (bugs, action) => {
+      bugs.list.push({
+        id: ++lastId,
+        description: action.payload.description,
+        resolved: false,
+      });
+    },
+
+    BugResolved: (bugs, action) => {
+      const index = bugs.list.findIndex((bug) => bug.id === action.payload.id);
+      bugs.list[index].resolved = true;
+    },
+    BugRecieved: (bugs, action) => {
+      console.log("In BUG RECVEIVED---", action.payload);
+      //   bugs.list.push(...action.payload);
+      bugs.list = action.payload;
+    },
+  },
+});
+
+// -------------------- Actions need to be imported as named export & reducer needs to be imported as default export--------------------------
+
+export const {
+  BugAdded,
+  BugResolved,
+  BugAssignedToUser,
+  BugRecieved,
+} = slice.actions;
+export default slice.reducer;
+
+//=============================== Actions Creators =====================================
+const url = "/bugs";
+export const loadbugs = () =>{
+   return apiCallBegan({
+        url,
+        // onSuccess: `${BugRecieved}`,
+        onSuccess: BugRecieved.type,
+        // onError: actions.apiCallFailed.type,                  don't use here; us it in the middleware
+      })
+} 
 
 
-    export const getBugsByUser =  userId => createSelector(
-        state => state.RootEntities.entities.bugs,
-        bugs => bugs.filter(bug => bug.userId === userId)
-        )
+//Selectors
+export const getUnresolvedBugs = createSelector(
+  (state) => state.RootEntities.entities.bugs,
+  (bugs) => bugs.filter((bug) => !bug.resolved)
+);
+
+export const getBugsByUser = (userId) =>
+  createSelector(
+    (state) => state.RootEntities.entities.bugs,
+    (bugs) => bugs.filter((bug) => bug.userId === userId)
+  );
