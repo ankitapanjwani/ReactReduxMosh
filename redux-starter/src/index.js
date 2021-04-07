@@ -5,7 +5,7 @@ import configureStore from "./store/configureStore";
 // import { BugAdded, BugResolved, getUnresolvedBugs,BugAssignedToUser ,getBugsByUser} from "./store/bugs";
 // import { UserAdded } from "./store/users";
 // import { BugRecieved } from './store/bugs'
-import { loadbugs } from './store/bugs';
+import { /* loadbugs */ addBug} from "./store/bugs";
 const store = configureStore();
 
 // store.subscribe(() => {
@@ -78,7 +78,6 @@ const store = configureStore();
 //   },
 // });
 
-
 //-------------------- Dispatching using action creators in the file itself --------------------------
 // store.dispatch(
 //   actions.apiCallBegan({
@@ -89,9 +88,13 @@ const store = configureStore();
 //   })
 // );
 
-
 //======================== After moving action creators in bugs file ===============================
-store.dispatch(loadbugs());
+store.dispatch(addBug({description: "a"}));
+
+
+// ====================dispatch bugs after 2ms ===================
+// setTimeout(() => store.dispatch(loadbugs()), 2000);
+
 
 // store.dispatch(
 //   actions.apiCallBegan()

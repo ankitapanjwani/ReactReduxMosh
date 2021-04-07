@@ -82,7 +82,7 @@ import { apiCallBegan } from "./api";
 // export const BugRemoved = createAction("BUG_REMOVED");
 
 // --------------------- REDUCER using toolkit's  Actions & ActionCreators -------------------
-let lastId = 0;
+// let lastId = 0;
 
 // Reducer should be default export
 // export default function reducer(state = [], action) {
@@ -182,10 +182,24 @@ const slice = createSlice({
   initialState: {
     list: [],
     loading: false,
-    lastfetch: null,
+    // lastfetch: null,   //for caching
   },
   reducers: {
     // actions => action handlers
+
+    BugsRequested: (bugs, action) => {
+      bugs.loading = true;
+    },
+    BugsRequestFailed: (bugs,action) => {
+      bugs.loading = false;
+    },
+    BugRecieved: (bugs, action) => {
+      console.log("In BUG RECVEIVED---", action.payload);
+      //   bugs.list.push(...action.payload);
+      bugs.list = action.payload;
+      bugs.loading = false;
+      // bugs.lastfetch = Date.now();
+    },
     BugAssignedToUser: (bugs, action) => {
       const { bugId, userId } = action.payload;
 
@@ -193,21 +207,20 @@ const slice = createSlice({
       bugs.list[index].userId = userId;
     },
     BugAdded: (bugs, action) => {
-      bugs.list.push({
-        id: ++lastId,
-        description: action.payload.description,
-        resolved: false,
-      });
+
+
+      // bugs.list.push({
+      //   id: ++lastId,
+      //   description: action.payload.description,
+      //   resolved: false,
+      // });
+      bugs.list.push(action.payload);
+
     },
 
     BugResolved: (bugs, action) => {
       const index = bugs.list.findIndex((bug) => bug.id === action.payload.id);
       bugs.list[index].resolved = true;
-    },
-    BugRecieved: (bugs, action) => {
-      console.log("In BUG RECVEIVED---", action.payload);
-      //   bugs.list.push(...action.payload);
-      bugs.list = action.payload;
     },
   },
 });
@@ -219,20 +232,31 @@ export const {
   BugResolved,
   BugAssignedToUser,
   BugRecieved,
+  BugsRequested,
+  BugsRequestFailed
 } = slice.actions;
 export default slice.reducer;
 
 //=============================== Actions Creators =====================================
 const url = "/bugs";
-export const loadbugs = () =>{
-   return apiCallBegan({
-        url,
-        // onSuccess: `${BugRecieved}`,
-        onSuccess: BugRecieved.type,
-        // onError: actions.apiCallFailed.type,                  don't use here; us it in the middleware
-      })
-} 
+export const loadbugs = () => {
+  return apiCallBegan({
+    url,
+    // onSuccess: `${BugRecieved}`,
+    onStart: BugsRequested.type,
+    onSuccess: BugRecieved.type,
+    onError: BugsRequestFailed.type
+    // onError: actions.apiCallFailed.type,                  don't use here; us it in the middleware
+  });
+};
 
+
+export const addBug = bug => apiCallBegan({
+  url,
+  method:"post",
+  data: bug,
+  onSuccess: BugAdded.type
+});
 
 //Selectors
 export const getUnresolvedBugs = createSelector(
